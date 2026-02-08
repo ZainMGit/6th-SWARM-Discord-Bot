@@ -3,6 +3,7 @@
 Bot for the 6th-SWARM Discord server.
 
 **Commands**
+
 `!onboard @member [optional nickname]`
 
 - Adds 3 roles to the user
