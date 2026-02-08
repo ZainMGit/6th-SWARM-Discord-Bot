@@ -31,6 +31,7 @@ def get_role(guild, role_id):
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(activity=discord.Game(name="Foxhole"))
     print(f"Logged in as {bot.user}")
 
 
