@@ -1,3 +1,4 @@
+import json
 import os
 import discord
 from discord.ext import commands
@@ -13,6 +14,7 @@ ROLE_ADD_IDS = [
     int(os.getenv("ROLE_ADD_3")),
 ]
 ROLE_REMOVE_ID = int(os.getenv("ROLE_REMOVE"))
+
 def read_role_id(var_name):
     value = os.getenv(var_name)
     return int(value) if value else None
@@ -33,6 +35,31 @@ intents.message_content = True  # REQUIRED for prefix commands
 intents.members = True          # Needed for member edits
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+
+def load_leaderboard():
+    if not os.path.exists(LEADERBOARD_FILE):
+        return {}
+    try:
+        with open(LEADERBOARD_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_leaderboard(data):
+    with open(LEADERBOARD_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+
+
+def increment_onboard_usage(user_id):
+    data = load_leaderboard()
+    key = str(user_id)
+    data[key] = int(data.get(key, 0)) + 1
+    save_leaderboard(data)
 
 
 def get_role(guild, role_id):
@@ -69,6 +96,8 @@ async def onboard(ctx, member: discord.Member, *, nickname: str = None):
         new_nick = f"[Pvt] {base_name}"
         await member.edit(nick=new_nick, reason=f"Onboarded by {ctx.author}")
 
+        increment_onboard_usage(ctx.author.id)
+
         await ctx.send(f"✅ {member.mention} has been onboarded!")
 
     except discord.Forbidden:
@@ -82,6 +111,26 @@ async def onboard_error(ctx, error):
         await ctx.send(" You don't have the required role to use this command.")
     else:
         await ctx.send(f" Error: {error}")
+
+
+@bot.command()
+async def leaderboard(ctx):
+    """Shows total onboard command usages per user."""
+    data = load_leaderboard()
+    if not data:
+        await ctx.send("No onboard usage recorded yet.")
+        return
+
+    entries = sorted(data.items(), key=lambda kv: kv[1], reverse=True)
+    lines = []
+    for user_id, count in entries[:10]:
+        user = ctx.guild.get_member(int(user_id))
+        name = user.display_name if user else f"User {user_id}"
+        lines.append(f"{name}: {count}")
+
+    total = sum(data.values())
+    header = f"Onboard Leaderboard (total uses: {total})"
+    await ctx.send(header + "\n" + "\n".join(lines))
 
 
 bot.run(TOKEN)
