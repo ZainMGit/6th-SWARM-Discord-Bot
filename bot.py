@@ -13,7 +13,20 @@ ROLE_ADD_IDS = [
     int(os.getenv("ROLE_ADD_3")),
 ]
 ROLE_REMOVE_ID = int(os.getenv("ROLE_REMOVE"))
-ALLOWED_ROLE_ID = int(os.getenv("ROLE_ONBOARD_ALLOWED"))
+def read_role_id(var_name):
+    value = os.getenv(var_name)
+    return int(value) if value else None
+
+ALLOWED_ROLE_IDS = [
+    rid
+    for rid in [
+        read_role_id("ROLE_ONBOARD_ALLOWED"),
+        read_role_id("ROLE_ONBOARD_ALLOWED_2"),
+    ]
+    if rid
+]
+if not ALLOWED_ROLE_IDS:
+    raise ValueError("At least one onboarding role must be set in environment variables.")
 
 intents = discord.Intents.default()
 intents.message_content = True  # REQUIRED for prefix commands
@@ -36,7 +49,7 @@ async def on_ready():
 
 
 @bot.command()
-@commands.has_role(ALLOWED_ROLE_ID)
+@commands.has_any_role(*ALLOWED_ROLE_IDS)
 #!onboard @member [optional nickname]
 async def onboard(ctx, member: discord.Member, *, nickname: str = None):
     """Adds 3 roles, removes 1 role, changes nickname"""
