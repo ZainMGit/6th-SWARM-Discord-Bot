@@ -1,6 +1,6 @@
 # 6th SWARM Discord Bot
 
-Bot for the 6th-SWARM Discord server.
+Bot for the 6th-SWARM Discord server. Currently hosted with an Oracle VM
 
 **Commands**
 
